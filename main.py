@@ -42,16 +42,24 @@ def filter_proxies(proxies, filter_type=None, value=None):
     print("Filtering proxies...")
 
     filtered_proxies = []
+    total_proxies = len(proxies)
+    
+    with open("GOODPROXIES.txt", "w") as good_proxies_file:
+        for index, proxy in enumerate(proxies):
+            response_time = test_proxy_speed(proxy)
+            print(f"Testing proxy {index + 1}/{total_proxies}: {proxy['ip']}:{proxy['port']}")
 
-    for proxy in proxies:
-        response_time = test_proxy_speed(proxy)
-        if response_time is not None:
-            proxy["response_time"] = response_time
-            proxy["location"] = get_proxy_location(proxy["ip"])
-            filtered_proxies.append(proxy)
+            if response_time is not None:
+                proxy["response_time"] = response_time
+                proxy["location"] = get_proxy_location(proxy["ip"])
+                filtered_proxies.append(proxy)
+                print(f"Proxy {proxy['ip']}:{proxy['port']} works! (Response Time: {response_time} seconds)")
+
+                good_proxies_file.write(f"{proxy['ip']}:{proxy['port']}\n")
 
     # TODO: Implement filtering based on filter_type and value
     # For now, just printing the filtered_proxies
+    print("Finished filtering proxies.")
     print(filtered_proxies)
 
 def find_proxies():
