@@ -2,15 +2,31 @@ import sys
 import requests
 import json
 from requests.adapters import HTTPAdapter
-from requests.packages.urllib3.util.retry import Retry
+from urllib3.util.retry import Retry
 import concurrent.futures
 
 def fetch_proxies():
-    print("Fetching proxies...")
-    url = "https://proxylist.geonode.com/api/proxy-list?limit=500&page=1&sort_by=lastChecked&sort_type=desc"
-    response = requests.get(url)
-    data = response.json()
-    return data["data"]
+    proxies = []
+    page = 1
+    while True:
+        print(f"Fetching proxies from page {page}...")
+        url = f"https://proxylist.geonode.com/api/proxy-list?limit=500&page={page}&sort_by=lastChecked&sort_type=desc"
+        response = requests.get(url)
+        if response.status_code != 200:
+            print(f"No more proxies found at page {page}. Stopping.")
+            break
+
+        proxy_data = json.loads(response.text)
+        for proxy in proxy_data["data"]:
+            proxy_info = f"{proxy['ip']}:{proxy['port']}"
+            if "credentials" in proxy:
+                proxy_info += f",{proxy['credentials']['username']},{proxy['credentials']['password']}"
+            proxies.append(proxy_info)
+
+        page += 1
+
+    return proxies
+
 
 def test_proxy_speed(proxy):
     test_url = "https://httpbin.org/ip"
