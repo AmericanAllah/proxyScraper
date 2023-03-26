@@ -17,15 +17,23 @@ def fetch_proxies():
             break
 
         proxy_data = json.loads(response.text)
+        if len(proxy_data["data"]) == 0:
+            print(f"No more proxies found at page {page}. Stopping.")
+            break
         for proxy in proxy_data["data"]:
-            proxy_info = f"{proxy['ip']}:{proxy['port']}"
+            proxy_info = {
+                "ip": proxy["ip"],
+                "port": proxy["port"]
+            }
             if "credentials" in proxy:
-                proxy_info += f",{proxy['credentials']['username']},{proxy['credentials']['password']}"
+                proxy_info["username"] = proxy["credentials"]["username"]
+                proxy_info["password"] = proxy["credentials"]["password"]
             proxies.append(proxy_info)
 
         page += 1
 
     return proxies
+
 
 
 def test_proxy_speed(proxy):
@@ -43,11 +51,14 @@ def test_proxy_speed(proxy):
     try:
         response = session.get(test_url, proxies=proxies, timeout=5)
         if response.status_code == 200:
-            return response.elapsed.total_seconds()
+            response_time = response.elapsed.total_seconds()
+            print(f"Proxy {proxy['ip']}:{proxy['port']} tested (Response Time: {response_time} seconds)")
+            return response_time
     except requests.exceptions.RequestException:
         pass
 
     return None
+
 
 def get_proxy_location(ip_address):
     location_url = f"https://ipapi.co/{ip_address}/json/"
